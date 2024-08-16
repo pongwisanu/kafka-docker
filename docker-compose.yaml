@@ -1,0 +1,34 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://10.100.100.211:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OPTS: "-javaagent:/usr/app/jmx_prometheus_javaagent.jar=7071:/usr/app/kafka-jmx-config.yaml"
+    volumes:
+      - ./jmx_prometheus_javaagent.jar:/usr/app/jmx_prometheus_javaagent.jar
+      - ./kafka-jmx-config.yaml:/usr/app/kafka-jmx-config.yaml
+    ports:
+      - "9092:9092"
+      - "7071:7071"
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_kafka
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
